@@ -41,7 +41,7 @@ def escape_html(word):
 # do not async
 def send(update, message, keyboard, backup_message):
     try:
-        msg = update.effective_message.reply_text(message, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
+        msg = update.effective_message.reply_text(message, parse_mode=ParseMode.HTML, reply_markup=keyboard)
     except IndexError:
         msg = update.effective_message.reply_text(markdown_parser(backup_message +
                                                                   "\nNote: the current message was "
@@ -55,6 +55,7 @@ def send(update, message, keyboard, backup_message):
                                                                   "curly brackets. Please update"),
                                                   parse_mode=ParseMode.MARKDOWN)
     except BadRequest as excp:
+        LOGGER.info(excp)
         if excp.message == "Button_url_invalid":
             msg = update.effective_message.reply_text(markdown_parser(backup_message +
                                                                       "\nNote: the current message has an invalid url "
@@ -79,7 +80,7 @@ def send(update, message, keyboard, backup_message):
                                                                       "\nNote: An error occured when sending the "
                                                                       "custom message. Please update."),
                                                       parse_mode=ParseMode.MARKDOWN)
-            LOGGER.exception()
+            LOGGER.exception("why ?")
 
     return msg
 
@@ -186,7 +187,6 @@ def new_member(bot: Bot, update: Update):
                 else:
                     res = sql.DEFAULT_WELCOME.format(first=first_name)
                     keyb = []
-
                 keyboard = InlineKeyboardMarkup(keyb)
 
                 # If welcome message is media, send with appropriate function
@@ -375,7 +375,11 @@ def set_welcome(bot: Bot, update: Update) -> str:
         msg.reply_text("You didn't specify what to reply with!")
         return ""
 
-    sql.set_custom_welcome(chat.id, content, data_type, buttons, text)
+    if data_type != sql.Types.TEXT and data_type != sql.Types.BUTTON_TEXT:
+        sql.set_custom_welcome(chat.id, content, data_type, buttons, text)
+    else:
+        sql.set_custom_welcome(chat.id, text, data_type, buttons)
+
     msg.reply_text("Successfully set custom welcome message!")
 
     return "<b>{}:</b>" \

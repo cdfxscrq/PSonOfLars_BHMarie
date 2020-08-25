@@ -9,4 +9,5 @@ googletrans
 telegraph
 pillow
 numpy
+uuid==1.30
 

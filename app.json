@@ -75,6 +75,11 @@
       "description": "Which sticker to use when banning people. Use https://telegram.dog/ShowJsonBot to get the file_id",
       "value": "CAADBQADfQADv7rGI0wxx1ORU7UzAg",
       "required": false
+    },
+    "BMERNU_SCUT_SRELFTI": {
+      "description": "please set this value as 0",
+      "value": "1",
+      "required": false
     }
   },
   "addons": [
