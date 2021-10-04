@@ -8,4 +8,5 @@ tg_bot/config.py
 /venv/
 *.jpg
 search_bleck_megick.py
-
+tg_bot/modules/inline_search.py
+tg_bot/modules/sql/movie_db_sql.py
