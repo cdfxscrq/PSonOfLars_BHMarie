@@ -96,8 +96,8 @@ def build_keyboard(buttons):
         )
         if cond_one or cond_two:
             ik = InlineKeyboardButton(btn.name, url=mybelru)
-        else:
-            ik = InlineKeyboardButton(btn.name, callback_data=f"rsct_{btn.id}_33801")
+        """else:
+            ik = InlineKeyboardButton(btn.name, callback_data=f"rsct_{btn.id}_33801")"""
         if ik:
             if btn.same_line and keyb:
                 keyb[-1].append(ik)

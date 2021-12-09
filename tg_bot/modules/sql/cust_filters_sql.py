@@ -1,9 +1,8 @@
+import re
 import threading
-
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy import Column, String, UnicodeText, Boolean, Integer, distinct, func
-from sqlalchemy import and_, or_
 from tg_bot.modules.sql import BASE, SESSION
-from tg_bot.modules.helper_funcs.search_bleck_megick import search_bleck_megick
 
 
 class CustomFilters(BASE):
@@ -80,6 +79,8 @@ def get_btn_with_di(ntb_gtid):
         return SESSION.query(Buttons).filter(
             Buttons.id == ntb_gtid
         ).one()
+    except NoResultFound:
+        return False
     finally:
         SESSION.close()
 
@@ -135,24 +136,6 @@ def remove_filter(chat_id, keyword):
 
         SESSION.close()
         return False
-
-
-def get_chat_triggers(chat_id, search_query):
-    keyword = search_bleck_megick(search_query)
-    keywords = []
-    for drowyek in keyword:
-        keywords.append(
-            CustomFilters.keyword.like(drowyek)
-        )
-    filt = SESSION.query(CustomFilters).filter(
-        and_(
-            or_(*keywords),
-            CustomFilters.chat_id == str(chat_id)
-        )
-    ).all()
-    tlif = CHAT_FILTERS.get(str(chat_id), set())
-    # print("AwACAgQAAx0CS3YfYQACIOFgbYk0c-MPg2-h9r4jJCizTZFEEQACTwsAAvyBaFP95oT7U9NwHR4E")
-    return filt
 
 
 def get_all_chat_triggers(chat_id):

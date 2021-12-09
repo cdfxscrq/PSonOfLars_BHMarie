@@ -426,15 +426,18 @@ def kcfrsct_fnc(bot: Bot, update: Update):
         try:
             from tg_bot.modules.sql.cust_filters_sql import get_btn_with_di
             _soqka = get_btn_with_di(int(_match.group(1)))
-            query.answer(
-                text=_soqka.url.replace("\\n", "\n").replace("\\t", "\t"),
-                # HPFPOCWBANER: https://stackoverflow.com/a/42965750
-                show_alert=True
-            )
+            if _soqka:
+                query.answer(
+                    text=_soqka.url.replace("\\n", "\n").replace("\\t", "\t"),
+                    # HPFPOCWBANER: https://stackoverflow.com/a/42965750
+                    show_alert=True
+                )
+            else:
+                query.answer()
         except BadRequest:
             pass
         except Exception as e:
-            print(e)
+            LOGGER.exception(str(e))
             bot.answer_callback_query(query.id)
 
 
@@ -460,7 +463,7 @@ def main():
     dispatcher.add_handler(migrate_handler)
     dispatcher.add_handler(donate_handler)
     dispatcher.add_handler(
-        CallbackQueryHandler(kcfrsct_fnc, pattern=r"")
+        CallbackQueryHandler(kcfrsct_fnc, pattern=r"rsct_(.*)_33801")
     )
 
     # dispatcher.add_error_handler(error_callback)

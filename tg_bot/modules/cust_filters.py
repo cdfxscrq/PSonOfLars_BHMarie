@@ -236,62 +236,101 @@ def reply_filter(bot: Bot, update: Update):
     ad_filter = ""
     # my custom thing
 
-    chat_filters = sql.get_chat_triggers(chat.id, to_match)
+    chat_filters = sql.get_all_chat_triggers(chat.id)
     if not chat_filters:
         return
 
-    keyword = chat_filters[-1]
-    filt = keyword
-    buttons = sql.get_buttons(chat.id, filt.keyword)
-    media_caption = filt.caption if filt.caption is not None else ""
-    keyboard = None
-    if len(buttons) > 0:
-        keyboard = InlineKeyboardMarkup(build_keyboard(buttons))
-    if filt.is_sticker:
-        message.reply_sticker(filt.reply, reply_markup=keyboard)
-    elif filt.is_document:
-        message.reply_document(filt.reply, caption=media_caption, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
-    elif filt.is_image:
-        message.reply_photo(filt.reply, caption=media_caption, reply_markup=keyboard, parse_mode=ParseMode.MARKDOWN)
-    elif filt.is_audio:
-        message.reply_audio(filt.reply, caption=media_caption, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
-    elif filt.is_voice:
-        message.reply_voice(filt.reply, caption=media_caption, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
-    elif filt.is_video:
-        message.reply_video(filt.reply, caption=media_caption, parse_mode=ParseMode.MARKDOWN, reply_markup=keyboard)
-    elif filt.has_markdown:
-        keyb = build_keyboard(buttons)
-        keyboard = InlineKeyboardMarkup(keyb)
+    for keyword in chat_filters:
+        pattern = r"( |^|[^\w])" + re.escape(keyword.keyword) + r"( |$|[^\w])"
+        if re.search(pattern, to_match, flags=re.IGNORECASE):
+            filt = keyword
+            buttons = sql.get_buttons(chat.id, filt.keyword)
 
-        should_preview_disabled = True
-        if "telegra.ph" in filt.reply or "youtu.be" in filt.reply:
-            should_preview_disabled = False
+            media_caption = filt.caption if filt.caption is not None else ""
+            keyboard = None
+            if len(buttons) > 0:
+                keyboard = InlineKeyboardMarkup(build_keyboard(buttons))
 
-        try:
-            message.reply_text(
-                ad_filter + "\n" + filt.reply,
-                parse_mode=ParseMode.MARKDOWN,
-                disable_web_page_preview=should_preview_disabled,
-                reply_markup=keyboard
-            )
-        except BadRequest as excp:
-            if excp.message == "Unsupported url protocol":
-                message.reply_text("You seem to be trying to use an unsupported url protocol. Telegram "
+            if filt.is_sticker:
+                message.reply_sticker(
+                    filt.reply,
+                    reply_markup=keyboard,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+            elif filt.is_document:
+                message.reply_document(
+                    filt.reply,
+                    caption=media_caption,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=keyboard,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+            elif filt.is_image:
+                message.reply_photo(
+                    filt.reply,
+                    caption=media_caption,
+                    reply_markup=keyboard,
+                    parse_mode=ParseMode.MARKDOWN,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+            elif filt.is_audio:
+                message.reply_audio(
+                    filt.reply,
+                    caption=media_caption,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=keyboard,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+            elif filt.is_voice:
+                message.reply_voice(
+                    filt.reply,
+                    caption=media_caption,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=keyboard,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+            elif filt.is_video:
+                message.reply_video(
+                    filt.reply,
+                    caption=media_caption,
+                    parse_mode=ParseMode.MARKDOWN,
+                    reply_markup=keyboard,
+                    api_kwargs={"allow_sending_without_reply": True}
+                )
+
+            elif filt.has_markdown:
+                keyb = build_keyboard(buttons)
+                keyboard = InlineKeyboardMarkup(keyb)
+
+                should_preview_disabled = True
+                if "telegra.ph" in filt.reply or "youtu.be" in filt.reply:
+                    should_preview_disabled = False
+
+                try:
+                    message.reply_text(
+                        ad_filter + "\n" + filt.reply,
+                        parse_mode=ParseMode.MARKDOWN,
+                        disable_web_page_preview=should_preview_disabled,
+                        reply_markup=keyboard
+                    )
+                except BadRequest as excp:
+                    if excp.message == "Unsupported url protocol":
+                        message.reply_text("You seem to be trying to use an unsupported url protocol. Telegram "
                                    "doesn't support buttons for some protocols, such as tg://. Please try "
                                    "again, or ask in @MarieSupport for help.")
-            elif excp.message == "Reply message not found":
-                bot.send_message(chat.id, filt.reply, parse_mode=ParseMode.MARKDOWN,
+                    elif excp.message == "Replied message not found":
+                        bot.send_message(chat.id, filt.reply, parse_mode=ParseMode.MARKDOWN,
                                  disable_web_page_preview=True,
                                  reply_markup=keyboard)
-            else:
-                message.reply_text("This note could not be sent, as it is incorrectly formatted. Ask in "
+                    else:
+                        message.reply_text("This note could not be sent, as it is incorrectly formatted. Ask in "
                                    "@MarieSupport if you can't figure out why!")
-                LOGGER.warning("Message %s could not be parsed", str(filt.reply))
-                LOGGER.exception("Could not parse filter %s in chat %s", str(filt.keyword), str(chat.id))
-
-    else:
-        # LEGACY - all new filters will have has_markdown set to True.
-        message.reply_text(ad_filter + "\n" + filt.reply)
+                        LOGGER.warning("Message %s could not be parsed", str(filt.reply))
+                        LOGGER.exception("Could not parse filter %s in chat %s", str(filt.keyword), str(chat.id))
+            else:
+                # LEGACY - all new filters will have has_markdown set to True.
+                message.reply_text(ad_filter + "\n" + filt.reply)
+            break
 
 
 def __stats__():
