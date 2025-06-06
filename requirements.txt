@@ -1,13 +1,12 @@
 future
 emoji
 requests
-sqlalchemy
-python-telegram-bot==11.1.0
+sqlalchemy>=2.0.0
+python-telegram-bot>=20.0
 psycopg2-binary
 feedparser
-googletrans
+googletrans==4.0.0rc1  # Latest maintained fork; original is no longer updated
 telegraph
 pillow
 numpy
-uuid==1.30
-
+# uuid is included in Python's standard library, you do not need to install it separately
