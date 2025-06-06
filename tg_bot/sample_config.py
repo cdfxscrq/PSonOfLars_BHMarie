@@ -1,47 +1,81 @@
+"""
+Sample configuration file for PSonOfLars_BHMarie Telegram Bot.
+
+IMPORTANT:
+- DO NOT rename and directly use this file as your own config!
+- Instead, create a new 'config.py' in the same directory, import this class, and extend it as needed.
+- Never commit your personal API keys, tokens, or passwords to public repositories.
+"""
+
+import os
+import sys
+
 if not __name__.endswith("sample_config"):
-    import sys
-    print("The README is there to be read. Extend this sample config to a config file, don't just rename and change "
-          "values here. Doing that WILL backfire on you.\nBot quitting.", file=sys.stderr)
+    print(
+        "Please extend this sample config to your own config.py file. "
+        "Never edit or use this sample directly. Exiting for safety.",
+        file=sys.stderr
+    )
     quit(1)
 
 
-# Create a new config.py file in same dir and import, then extend this class.
 class Config(object):
+    # LOGGER settings
     LOGGER = True
 
-    # REQUIRED
-    API_KEY = "YOUR KEY HERE"
-    OWNER_ID = "YOUR ID HERE"  # If you dont know, run the bot and do /id in your private chat with it
-    OWNER_USERNAME = "YOUR USERNAME HERE"
+    # REQUIRED - Must be set in your own config.py for the bot to run!
+    API_KEY = os.environ.get("BOT_API_KEY", "YOUR KEY HERE")
+    OWNER_ID = int(os.environ.get("BOT_OWNER_ID", 0))  # Integer: Your Telegram user ID
+    OWNER_USERNAME = os.environ.get("BOT_OWNER_USERNAME", "YOUR USERNAME HERE")
 
     # RECOMMENDED
-    SQLALCHEMY_DATABASE_URI = 'sqldbtype://username:pw@hostname:port/db_name'  # needed for any database modules
-    MESSAGE_DUMP = None  # needed to make sure 'save from' messages persist
-    LOAD = []
-    NO_LOAD = ['char_limit_exceed', 'translation', 'rss', 'sed']
-    WEBHOOK = False
-    URL = None
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL", "sqldbtype://username:pw@hostname:port/db_name"
+    )
+    MESSAGE_DUMP = os.environ.get("MESSAGE_DUMP_CHAT_ID", None)
+    LOAD = os.environ.get("LOAD_MODULES", "").split(",") if os.environ.get("LOAD_MODULES") else []
+    NO_LOAD = os.environ.get("NO_LOAD_MODULES", "char_limit_exceed,translation,rss,sid").split(",")
+
+    WEBHOOK = bool(os.environ.get("BOT_USE_WEBHOOK", False))
+    URL = os.environ.get("BOT_WEBHOOK_URL", None)
 
     # OPTIONAL
-    SUDO_USERS = []  # List of id's (not usernames) for users which have sudo access to the bot.
-    SUPPORT_USERS = []  # List of id's (not usernames) for users which are allowed to gban, but can also be banned.
-    WHITELIST_USERS = []  # List of id's (not usernames) for users which WONT be banned/kicked by the bot.
-    DONATION_LINK = None  # EG, paypal
-    CERT_PATH = None
-    PORT = 5000
-    DEL_CMDS = False  # Whether or not you should delete "blue text must click" commands
-    STRICT_GBAN = False
-    WORKERS = 8  # Number of subthreads to use. This is the recommended amount - see for yourself what works best!
-    BAN_STICKER = 'CAADAgADOwADPPEcAXkko5EB3YGYAg'  # banhammer marie sticker
-    ALLOW_EXCL = False  # Allow ! commands as well as /
-    BMERNU_SCUT_SRELFTI = None
+    SUDO_USERS = [
+        int(x) for x in os.environ.get("SUDO_USERS", "").split(",") if x
+    ]  # List of Telegram user IDs
+    SUPPORT_USERS = [
+        int(x) for x in os.environ.get("SUPPORT_USERS", "").split(",") if x
+    ]
+    WHITELIST_USERS = [
+        int(x) for x in os.environ.get("WHITELIST_USERS", "").split(",") if x
+    ]
+    DONATION_LINK = os.environ.get("DONATION_LINK", None)
+    CERT_PATH = os.environ.get("CERT_PATH", None)
+    PORT = int(os.environ.get("PORT", 5000))
+    DEL_CMDS = bool(os.environ.get("DEL_CMDS", False))
+    STRICT_GBAN = bool(os.environ.get("STRICT_GBAN", False))
+    WORKERS = int(os.environ.get("WORKERS", 8))
+    BAN_STICKER = os.environ.get("BAN_STICKER", "CAADAgADOwADPPEcAXkko5EB3YGYAg")
+    ALLOW_EXCL = bool(os.environ.get("ALLOW_EXCL", False))
+    BMERNU_SCUT_SRELFTI = os.environ.get("BMERNU_SCUT_SRELFTI", None)
 
-    START_MESSAGE = "https://t.me/c/1235155926/33801"
-    START_BUTTONS = None
+    START_MESSAGE = os.environ.get(
+        "START_MESSAGE", "https://t.me/c/1235155926/33801"
+    )
+    START_BUTTONS = os.environ.get("START_BUTTONS", None)
+
+    # SECURITY IMPROVEMENTS:
+    # - Sensitive values are loaded from environment variables
+    # - OWNER_ID, SUDO_USERS, etc., are ensured to be integers
+    # - Never expose real API keys or secrets in source code
+
+    # NEW FEATURES:
+    # - Support for loading configuration from environment variables for easy deployment and CI/CD
+    # - Dynamic module loading/exclusion via environment variables
+    # - Clearer documentation and safer defaults
 
 class Production(Config):
     LOGGER = False
-
 
 class Development(Config):
     LOGGER = True
