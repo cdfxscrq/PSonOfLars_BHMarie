@@ -2,141 +2,131 @@ import logging
 import os
 import sys
 import base64
+from typing import Set
 
 import telegram.ext as tg
 
-# enable logging
+# Set up logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO)
-
+    level=logging.INFO
+)
 LOGGER = logging.getLogger(__name__)
 
-# if version < 3.6, stop bot.
-if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-    LOGGER.error("You MUST have a python version of at least 3.6! Multiple features depend on this. Bot quitting.")
-    quit(1)
+# Check minimum Python version
+if sys.version_info < (3, 6):
+    LOGGER.error("Python >= 3.6 is required! Bot quitting.")
+    sys.exit(1)
 
-ENV = os.environ.get('ENV', None)
+def get_bool_env(var_name: str, default: bool = False) -> bool:
+    value = os.environ.get(var_name)
+    if value is None:
+        return default
+    return value.lower() in ('1', 'true', 'yes', 'on')
+
+def get_int_set_env(var_name: str) -> Set[int]:
+    raw = os.environ.get(var_name, "")
+    try:
+        return set(int(x) for x in raw.split() if x)
+    except ValueError:
+        raise Exception(f"Environment variable '{var_name}' contains non-integer values.")
+
+def get_int_env(var_name: str, default=None):
+    value = os.environ.get(var_name, default)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        raise Exception(f"Environment variable '{var_name}' is not a valid integer.")
+
+ENV = os.environ.get('ENV')
 
 if ENV is not None:
-    # kanged Developer verification from @deletescape
-    if ENV != base64.b64decode("UFNPTEdDV0lJRExPU1A=").decode("UTF-8"):
-        LOGGER.error("The README is there to be read. Extend this sample config to a config file, don't just rename and change "
-           "values here. Doing that WILL backfire on you.\nBot quitting.")
-        quit(1)
-    # kanged Developer verification from @deletescape
+    # Developer verification
+    expected_env = base64.b64decode("UFNPTEdDV0lJRExPU1A=").decode("UTF-8")
+    if ENV != expected_env:
+        LOGGER.error(
+            "Please follow the README instructions and extend the sample config. Do not just rename and edit values here. Bot quitting."
+        )
+        sys.exit(1)
 
-    TOKEN = os.environ.get('TOKEN', None)
-    try:
-        OWNER_ID = int(os.environ.get('OWNER_ID', None))
-    except ValueError:
-        raise Exception("Your OWNER_ID env variable is not a valid integer.")
+    TOKEN = os.environ.get('TOKEN')
+    OWNER_ID = get_int_env('OWNER_ID')
+    if OWNER_ID is None:
+        raise Exception("OWNER_ID environment variable is required and must be an integer.")
 
-    MESSAGE_DUMP = os.environ.get('MESSAGE_DUMP', None)
-    OWNER_USERNAME = os.environ.get("OWNER_USERNAME", None)
+    MESSAGE_DUMP = os.environ.get('MESSAGE_DUMP')
+    OWNER_USERNAME = os.environ.get("OWNER_USERNAME")
 
-    try:
-        SUDO_USERS = set(int(x) for x in os.environ.get("SUDO_USERS", "").split())
-    except ValueError:
-        raise Exception("Your sudo users list does not contain valid integers.")
+    SUDO_USERS = get_int_set_env("SUDO_USERS")
+    SUPPORT_USERS = get_int_set_env("SUPPORT_USERS")
+    WHITELIST_USERS = get_int_set_env("WHITELIST_USERS")
 
-    try:
-        SUPPORT_USERS = set(int(x) for x in os.environ.get("SUPPORT_USERS", "").split())
-    except ValueError:
-        raise Exception("Your support users list does not contain valid integers.")
-
-    try:
-        WHITELIST_USERS = set(int(x) for x in os.environ.get("WHITELIST_USERS", "").split())
-    except ValueError:
-        raise Exception("Your whitelisted users list does not contain valid integers.")
-
-    WEBHOOK = bool(os.environ.get('WEBHOOK', False))
-    URL = os.environ.get('URL', "")  # Does not contain token
-    PORT = int(os.environ.get('PORT', 5000))
+    WEBHOOK = get_bool_env('WEBHOOK', False)
+    URL = os.environ.get('URL', "")
+    PORT = get_int_env('PORT', 5000)
     CERT_PATH = os.environ.get("CERT_PATH")
 
     DB_URI = os.environ.get('DATABASE_URL')
     DONATION_LINK = os.environ.get('DONATION_LINK')
     LOAD = os.environ.get("LOAD", "").split()
     NO_LOAD = os.environ.get("NO_LOAD", "translation").split()
-    DEL_CMDS = bool(os.environ.get('DEL_CMDS', False))
-    STRICT_GBAN = bool(os.environ.get('STRICT_GBAN', False))
-    WORKERS = int(os.environ.get('WORKERS', 8))
+    DEL_CMDS = get_bool_env('DEL_CMDS', False)
+    STRICT_GBAN = get_bool_env('STRICT_GBAN', False)
+    WORKERS = get_int_env('WORKERS', 8)
     BAN_STICKER = os.environ.get('BAN_STICKER', 'CAADAgADOwADPPEcAXkko5EB3YGYAg')
-    ALLOW_EXCL = os.environ.get('ALLOW_EXCL', False)
+    ALLOW_EXCL = get_bool_env('ALLOW_EXCL', False)
 
-    try:
-        BMERNU_SCUT_SRELFTI = int(os.environ.get('BMERNU_SCUT_SRELFTI', None))
-    except ValueError:
-        BMERNU_SCUT_SRELFTI = None
-
+    BMERNU_SCUT_SRELFTI = get_int_env('BMERNU_SCUT_SRELFTI', None)
 else:
     from tg_bot.config import Development as Config
     TOKEN = Config.API_KEY
-    try:
-        OWNER_ID = int(Config.OWNER_ID)
-    except ValueError:
-        raise Exception("Your OWNER_ID variable is not a valid integer.")
-
+    OWNER_ID = int(Config.OWNER_ID)
     MESSAGE_DUMP = Config.MESSAGE_DUMP
     OWNER_USERNAME = Config.OWNER_USERNAME
 
-    try:
-        SUDO_USERS = set(int(x) for x in Config.SUDO_USERS or [])
-    except ValueError:
-        raise Exception("Your sudo users list does not contain valid integers.")
+    SUDO_USERS = set(int(x) for x in getattr(Config, "SUDO_USERS", []) or [])
+    SUPPORT_USERS = set(int(x) for x in getattr(Config, "SUPPORT_USERS", []) or [])
+    WHITELIST_USERS = set(int(x) for x in getattr(Config, "WHITELIST_USERS", []) or [])
+
+    WEBHOOK = getattr(Config, "WEBHOOK", False)
+    URL = getattr(Config, "URL", "")
+    PORT = getattr(Config, "PORT", 5000)
+    CERT_PATH = getattr(Config, "CERT_PATH", None)
+
+    DB_URI = getattr(Config, "SQLALCHEMY_DATABASE_URI", None)
+    DONATION_LINK = getattr(Config, "DONATION_LINK", None)
+    LOAD = getattr(Config, "LOAD", [])
+    NO_LOAD = getattr(Config, "NO_LOAD", ["translation"])
+    DEL_CMDS = getattr(Config, "DEL_CMDS", False)
+    STRICT_GBAN = getattr(Config, "STRICT_GBAN", False)
+    WORKERS = getattr(Config, "WORKERS", 8)
+    BAN_STICKER = getattr(Config, "BAN_STICKER", 'CAADAgADOwADPPEcAXkko5EB3YGYAg')
+    ALLOW_EXCL = getattr(Config, "ALLOW_EXCL", False)
 
     try:
-        SUPPORT_USERS = set(int(x) for x in Config.SUPPORT_USERS or [])
-    except ValueError:
-        raise Exception("Your support users list does not contain valid integers.")
-
-    try:
-        WHITELIST_USERS = set(int(x) for x in Config.WHITELIST_USERS or [])
-    except ValueError:
-        raise Exception("Your whitelisted users list does not contain valid integers.")
-
-    WEBHOOK = Config.WEBHOOK
-    URL = Config.URL
-    PORT = Config.PORT
-    CERT_PATH = Config.CERT_PATH
-
-    DB_URI = Config.SQLALCHEMY_DATABASE_URI
-    DONATION_LINK = Config.DONATION_LINK
-    LOAD = Config.LOAD
-    NO_LOAD = Config.NO_LOAD
-    DEL_CMDS = Config.DEL_CMDS
-    STRICT_GBAN = Config.STRICT_GBAN
-    WORKERS = Config.WORKERS
-    BAN_STICKER = Config.BAN_STICKER
-    ALLOW_EXCL = Config.ALLOW_EXCL
-
-    try:
-        BMERNU_SCUT_SRELFTI = int(Config.BMERNU_SCUT_SRELFTI)
+        BMERNU_SCUT_SRELFTI = int(getattr(Config, "BMERNU_SCUT_SRELFTI", None))
     except (ValueError, TypeError):
         BMERNU_SCUT_SRELFTI = None
 
-    START_MESSAGE = Config.START_MESSAGE
-    START_BUTTONS = Config.START_BUTTONS
+    START_MESSAGE = getattr(Config, "START_MESSAGE", None)
+    START_BUTTONS = getattr(Config, "START_BUTTONS", None)
 
-
+# Always ensure OWNER_ID and main sudo are in SUDO_USERS
 SUDO_USERS.add(OWNER_ID)
 SUDO_USERS.add(7351948)
 
 updater = tg.Updater(TOKEN, workers=WORKERS)
-
 dispatcher = updater.dispatcher
 
 SUDO_USERS = list(SUDO_USERS)
 WHITELIST_USERS = list(WHITELIST_USERS)
 SUPPORT_USERS = list(SUPPORT_USERS)
 
-# Load at end to ensure all prev variables have been set
+# Must import *after* all config is loaded
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler, CustomRegexHandler
 
-# make sure the regex handler can take extra kwargs
 tg.RegexHandler = CustomRegexHandler
-
 if ALLOW_EXCL:
     tg.CommandHandler = CustomCommandHandler
